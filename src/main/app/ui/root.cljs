@@ -135,13 +135,40 @@
 
 (def ui-login (comp/factory Login))
 
-(defsc Main [this props]
-  {:query         [:main/welcome-message]
-   :initial-state {:main/welcome-message "Hi!"}
+(defsc TodoItem [this {:keys [component/id todo/label todo/complete?]}]
+  {:query [:component/id :todo/label :todo/complete?]
+   :ident (fn [] [:component/id :todoitem])
+   :initial-state (fn [{:keys [id label]}]
+                    {:component/id id
+                     :todo/label label
+                     :todo/complete? false})}
+  (div :.ui.container.segment
+       (li label)))
+
+(def ui-todo-item (comp/factory TodoItem))
+
+(defsc TodoList [this {:keys [component/id list/name list/items]}]
+  {:query [:component/id :list/name {:list/items (comp/get-query TodoItem)}]
+   :ident (fn [] [:component/id :todolist])
+   :initial-state (fn [{:keys [id name]}]
+                    {:list/name name
+                     :list/items [(comp/get-initial-state TodoItem {:id 1 :label "Buy Milk"})
+                                  (comp/get-initial-state TodoItem {:id 2 :label "Learn Fulcro"})
+                                  (comp/get-initial-state TodoItem {:id 3 :label "Create App"})]})}
+  (div :.ui.container.segment
+       (h3 name)
+       (mapv ui-todo-item items)))
+
+(def ui-todo-list (comp/factory TodoList))
+
+(defsc Main [this props list]
+  {:query         [:component/id :main]
+   :initial-state (fn [params] {:todo/list (comp/get-initial-state TodoList {:id 1 :name "Personal Todos"})})
    :ident         (fn [] [:component/id :main])
    :route-segment ["main"]}
   (div :.ui.container.segment
-    (h3 "Main")))
+    (h3 "Todos")
+    (ui-todo-list list)))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
   {:query         [:account/time-zone :account/real-name]
