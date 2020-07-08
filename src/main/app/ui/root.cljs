@@ -147,29 +147,37 @@
 
 (def ui-todo-item (comp/factory TodoItem))
 
-(defsc TodoList [this {:keys [list/id list/name list/items]}]
+(defsc TodoList [this {:keys [list/id list/name list/items] :as props}]
   {:query [:list/id :list/name {:list/items (comp/get-query TodoItem)}]
    :ident  :list/id
-   :initial-state (fn [{:keys [id name]}]
-                    {:list/id id
-                     :list/name name
-                     :list/items [(comp/get-initial-state TodoItem {:id 1 :label "Buy Milk"})
-                                  (comp/get-initial-state TodoItem {:id 2 :label "Learn Fulcro"})
-                                  (comp/get-initial-state TodoItem {:id 3 :label "Create App"})]})}
+   :initial-state (fn [{:keys [id name items]}]
+                      {:list/id id
+                       :list/name name
+                       :list/items items})}
+
   (div :.ui.container.segment
        (h3 name)
-       (mapv ui-todo-item items)))
+       (map ui-todo-item items)))
 
 (def ui-todo-list (comp/factory TodoList))
 
-(defsc Main [this props]
-  {:query         [:component/id :main]
-   :initial-state (fn [params] (comp/get-initial-state TodoList {:id 1 :name "Personal"}))
+(defsc Main [this {:keys [lists] :as props}]
+  {:query         [:lists]
+   :initial-state (fn [params] {:lists [(comp/get-initial-state TodoList {:id 1
+                                                                          :name "Personal"
+                                                                          :list/items [(comp/get-initial-state TodoItem {:id 1 :label "Buy Milk"})
+                                                                                       (comp/get-initial-state TodoItem {:id 2 :label "Learn Fulcro"})
+                                                                                       (comp/get-initial-state TodoItem {:id 3 :label "Create App"})]})
+                                        (comp/get-initial-state TodoList {:id 2
+                                                                          :name "Work"
+                                                                          :list/items [(comp/get-initial-state TodoItem {:id 1 :label "Write Report"})
+                                                                                       (comp/get-initial-state TodoItem {:id 2 :label "Prep Meeting"})
+                                                                                       (comp/get-initial-state TodoItem {:id 3 :label "Call Supplier"})]})]})
    :ident         (fn [] [:component/id :main])
    :route-segment ["main"]}
   (div :.ui.container.segment
-    (h3 "Todos")
-    (ui-todo-list list)))
+       (h3 "Todos")
+       (ui-todo-list lists)))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
   {:query         [:account/time-zone :account/real-name]
