@@ -135,13 +135,24 @@
 
 (def ui-login (comp/factory Login))
 
+
+(defsc Foo [this props]
+  {:query [:foo/name]
+   :initial-state {:foo/name "Alex"}
+   :ident (fn [] [:component/id :foo])}
+  (div
+   (p "Foo Component: " (:name props))))
+
+(def ui-foo (comp/factory Foo))
+
 (defsc Main [this props]
   {:query         [:main/welcome-message]
    :initial-state {:main/welcome-message "Hi!"}
    :ident         (fn [] [:component/id :main])
    :route-segment ["main"]}
   (div :.ui.container.segment
-    (h3 "Main")))
+    (h3 "Main")
+       (ui-foo)))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
   {:query         [:account/time-zone :account/real-name]

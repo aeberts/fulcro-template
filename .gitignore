@@ -60,3 +60,5 @@ docs/.jekyll-metadata
 .shadow-cljs
 resources/public/workspaces/*
 !resources/public/workspaces/index.html
+/.rebel_readline_history
+/yarn.lock
