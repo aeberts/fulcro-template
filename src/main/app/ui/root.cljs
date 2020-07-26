@@ -136,23 +136,27 @@
 (def ui-login (comp/factory Login))
 
 
-(defsc Foo [this props]
+(defsc Foo [this {:foo/keys [name] :as props}]
   {:query [:foo/name]
-   :initial-state {:foo/name "Alex"}
+   :initial-state (fn [params] {:foo/name "Alex"})
    :ident (fn [] [:component/id :foo])}
   (div
-   (p "Foo Component: " (:name props))))
+   (p "Rendered in Foo component: ")
+   (p "Hi " name)))
 
 (def ui-foo (comp/factory Foo))
 
-(defsc Main [this props]
-  {:query         [:main/welcome-message]
-   :initial-state {:main/welcome-message "Hi!"}
+(defsc Main [this {:main/keys [foo welcome-message] :as props}]
+  {:query         [:main/welcome-message {:main/foo (comp/get-query Foo)}]
+   :initial-state (fn [params]
+                    {:main/welcome-message "Hi!"
+                     :main/foo (comp/get-initial-state Foo)})
    :ident         (fn [] [:component/id :main])
    :route-segment ["main"]}
   (div :.ui.container.segment
-    (h3 "Main")
-       (ui-foo)))
+    (h3 "Main Component")
+       (p "Main Component Welcome Message: " welcome-message)
+       (ui-foo foo)))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
   {:query         [:account/time-zone :account/real-name]
@@ -210,3 +214,9 @@
   {:query         [{:root/top-chrome (comp/get-query TopChrome)}]
    :initial-state {:root/top-chrome {}}}
   (ui-top-chrome top-chrome))
+
+(comment
+ (app/schedule-render! app.application/SPA)
+ (comp/get-initial-state)
+
+ )
