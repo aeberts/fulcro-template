@@ -11,6 +11,7 @@
    [com.fulcrologic.fulcro.ui-state-machines :as uism :refer [defstatemachine]]
    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
    [com.fulcrologic.fulcro.algorithms.merge :as merge]
+   [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]
    [com.fulcrologic.fulcro-css.css :as css]
    [com.fulcrologic.fulcro.algorithms.form-state :as fs]
    [taoensso.timbre :as log]))
@@ -144,32 +145,37 @@
 
 (def ui-foo (comp/factory Foo))
 
-(defsc TodoItem [this {:todoitem/keys [id label status] :as props}]
-  {:query         [:todoitem/id :todoitem/label :todoitem/status]
-   :ident         :todoitem/id
-   :initial-state (fn [params] [{:todoitem/id     1
-                                 :todoitem/label  "Buy Milk"
-                                 :todoitem/status :not-started}
-                                {:todoitem/id     2
-                                 :todoitem/label  "Figure out Fulcro"
-                                 :todoitem/status :not-started}])}
+(defsc TodoItem [this {:item/keys [id label status] :as props}]
+  {:query         [:item/id :item/label :item/status]
+   :ident         :item/id
+   :initial-state (fn [params]
+                    [{:item/id     1
+                      :item/label  "Buy Milk"
+                      :item/status :not-started}
+                     {:item/id     2
+                      :item/label  "Figure out Fulcro"
+                      :item/status :not-started}
+                     {:item/id 3
+                      :item/label "Something Else"
+                      :item/status :not-started}])}
   (div :.ui.item
        (li label)))
 
 (def ui-todoitem (comp/factory TodoItem))
 
-(defsc TodoList [this {:todolist/keys [id listname listitems] :as props}]
-  {:query         [:todolist/id :todolist/listname {:todolist/listitems (comp/get-query TodoItem)}]
-   :ident         :todolist/id
-   :initial-state (fn [params] {:todolist/id        1
-                                :todolist/listname  "Personal"
-                                :todolist/listitems (comp/get-initial-state TodoItem)})}
+(defsc TodoList [this {:list/keys [id name items] :as props}]
+  {:query         [:list/id :list/name {:list/items (comp/get-query TodoItem)}]
+   :ident         :list/id
+   :initial-state (fn [params]
+                    {:list/id    1
+                     :list/name  "Personal"
+                     :list/items (comp/get-initial-state TodoItem)})}
   (div :.ui.container.segment
        (div :.ui.row
-            (h3 "Todo List: " listname)
+            (h3 "Todo List: " name)
             (div :.ui.row
                  (div :.ui.relaxed.divided.list
-                      (map ui-todoitem listitems))))))
+                      (map ui-todoitem items))))))
 
 (def ui-todolist (comp/factory TodoList))
 
@@ -186,7 +192,6 @@
   (div :.ui.container.segment
        (h3 "Main Component")
        (p "Welcome Message: " welcome-message)
-
        (div :.ui.container
             (ui-foo foo)
             (ui-todolist lists))))

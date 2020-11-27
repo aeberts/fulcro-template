@@ -1,0 +1,13 @@
+* Questions for Jakub
+- [ ]
+- [ ]
+* fulcro-template Todos
+- [ ] Push repo to github
+- [ ] Fix Terminal shortcuts in Karabiner
+- [X] Decide between fulcro-template and fulcro-rad-demo (fulcro-template)
+- [X] Update template to use most recent version of fulcro libs (local or github, or maven?)
+- [X] Pull develop branch from upstream
+- [X] Download and setup the stand-alone version of fulcro inspector
+- [X] Make shadow-cljs server port 9630
+- [X] Make clojure server port 3000
+- [X] Update Chrome Canary to latest
