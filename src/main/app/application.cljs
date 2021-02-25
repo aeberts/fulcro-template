@@ -2,7 +2,9 @@
   (:require
     [com.fulcrologic.fulcro.networking.http-remote :as net]
     [com.fulcrologic.fulcro.application :as app]
-    [com.fulcrologic.fulcro.components :as comp]))
+    [com.fulcrologic.fulcro.components :as comp]
+    [holyjak.fulcro-troubleshooting :refer [troubleshooting-render-middleware]]
+    ))
 
 (def secured-request-middleware
   ;; The CSRF token is embedded via server_components/html.clj
@@ -15,7 +17,9 @@
                 ;; See middleware.clj to see how the token is embedded into the HTML
                 :remotes {:remote (net/fulcro-http-remote
                                     {:url                "/api"
-                                     :request-middleware secured-request-middleware})}}))
+                                     :request-middleware secured-request-middleware})}
+                :render-middleware troubleshooting-render-middleware
+                }))
 
 (comment
   (-> SPA (::app/runtime-atom) deref ::app/indexes))
