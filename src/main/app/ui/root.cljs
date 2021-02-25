@@ -1,28 +1,27 @@
 (ns app.ui.root
   (:require
-   [app.model.session :as session]
-   [clojure.string :as str]
-   [com.fulcrologic.fulcro.dom :as dom :refer [div ul li p h3 button b]]
-   [com.fulcrologic.fulcro.dom.html-entities :as ent]
-   [com.fulcrologic.fulcro.dom.events :as evt]
-   [com.fulcrologic.fulcro.application :as app]
-   [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
-   [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
-   [com.fulcrologic.fulcro.ui-state-machines :as uism :refer [defstatemachine]]
-   [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
-   [com.fulcrologic.fulcro.algorithms.merge :as merge]
-   [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]
-   [com.fulcrologic.fulcro-css.css :as css]
-   [com.fulcrologic.fulcro.algorithms.form-state :as fs]
-   [taoensso.timbre :as log]))
+    [app.model.session :as session]
+    [clojure.string :as str]
+    [com.fulcrologic.fulcro.dom :as dom :refer [div ul li p h3 button b]]
+    [com.fulcrologic.fulcro.dom.html-entities :as ent]
+    [com.fulcrologic.fulcro.dom.events :as evt]
+    [com.fulcrologic.fulcro.application :as app]
+    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
+    [com.fulcrologic.fulcro.routing.dynamic-routing :as dr]
+    [com.fulcrologic.fulcro.ui-state-machines :as uism :refer [defstatemachine]]
+    [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
+    [com.fulcrologic.fulcro.algorithms.merge :as merge]
+    [com.fulcrologic.fulcro-css.css :as css]
+    [com.fulcrologic.fulcro.algorithms.form-state :as fs]
+    [taoensso.timbre :as log]))
 
 (defn field [{:keys [label valid? error-message] :as props}]
   (let [input-props (-> props (assoc :name label) (dissoc :label :valid? :error-message))]
     (div :.ui.field
-         (dom/label {:htmlFor label} label)
-         (dom/input input-props)
-         (dom/div :.ui.error.message {:classes [(when valid? "hidden")]}
-                  error-message))))
+      (dom/label {:htmlFor label} label)
+      (dom/input input-props)
+      (dom/div :.ui.error.message {:classes [(when valid? "hidden")]}
+        error-message))))
 
 (defsc SignupSuccess [this props]
   {:query         ['*]
@@ -30,51 +29,51 @@
    :ident         (fn [] [:component/id :signup-success])
    :route-segment ["signup-success"]}
   (div
-   (dom/h3 "Signup Complete!")
-   (dom/p "You can now log in!")))
+    (dom/h3 "Signup Complete!")
+    (dom/p "You can now log in!")))
 
 (defsc Signup [this {:account/keys [email password password-again] :as props}]
   {:query             [:account/email :account/password :account/password-again fs/form-config-join]
    :initial-state     (fn [_]
                         (fs/add-form-config Signup
-                                            {:account/email          ""
-                                             :account/password       ""
-                                             :account/password-again ""}))
+                          {:account/email          ""
+                           :account/password       ""
+                           :account/password-again ""}))
    :form-fields       #{:account/email :account/password :account/password-again}
    :ident             (fn [] session/signup-ident)
    :route-segment     ["signup"]
    :componentDidMount (fn [this]
                         (comp/transact! this [(session/clear-signup-form)]))}
-  (let [submit! (fn [evt]
-                  (when (or (identical? true evt) (evt/enter-key? evt))
-                    (comp/transact! this [(session/signup! {:email email :password password})])
-                    (log/info "Sign up")))
+  (let [submit!  (fn [evt]
+                   (when (or (identical? true evt) (evt/enter-key? evt))
+                     (comp/transact! this [(session/signup! {:email email :password password})])
+                     (log/info "Sign up")))
         checked? (fs/checked? props)]
     (div
-     (dom/h3 "Signup")
-     (div :.ui.form {:classes [(when checked? "error")]}
-          (field {:label         "Email"
-                  :value         (or email "")
-                  :valid?        (session/valid-email? email)
-                  :error-message "Must be an email address"
-                  :autoComplete  "off"
-                  :onKeyDown     submit!
-                  :onChange      #(m/set-string! this :account/email :event %)})
-          (field {:label         "Password"
-                  :type          "password"
-                  :value         (or password "")
-                  :valid?        (session/valid-password? password)
-                  :error-message "Password must be at least 8 characters."
-                  :onKeyDown     submit!
-                  :autoComplete  "off"
-                  :onChange      #(m/set-string! this :account/password :event %)})
-          (field {:label         "Repeat Password" :type "password" :value (or password-again "")
-                  :autoComplete  "off"
-                  :valid?        (= password password-again)
-                  :error-message "Passwords do not match."
-                  :onChange      #(m/set-string! this :account/password-again :event %)})
-          (dom/button :.ui.primary.button {:onClick #(submit! true)}
-                      "Sign Up")))))
+      (dom/h3 "Signup")
+      (div :.ui.form {:classes [(when checked? "error")]}
+        (field {:label         "Email"
+                :value         (or email "")
+                :valid?        (session/valid-email? email)
+                :error-message "Must be an email address"
+                :autoComplete  "off"
+                :onKeyDown     submit!
+                :onChange      #(m/set-string! this :account/email :event %)})
+        (field {:label         "Password"
+                :type          "password"
+                :value         (or password "")
+                :valid?        (session/valid-password? password)
+                :error-message "Password must be at least 8 characters."
+                :onKeyDown     submit!
+                :autoComplete  "off"
+                :onChange      #(m/set-string! this :account/password :event %)})
+        (field {:label         "Repeat Password" :type "password" :value (or password-again "")
+                :autoComplete  "off"
+                :valid?        (= password password-again)
+                :error-message "Passwords do not match."
+                :onChange      #(m/set-string! this :account/password-again :event %)})
+        (dom/button :.ui.primary.button {:onClick #(submit! true)}
+          "Sign Up")))))
 
 (declare Session)
 
@@ -92,120 +91,70 @@
    :ident         (fn [] [:component/id :login])}
   (let [current-state (uism/get-active-state this ::session/session)
         {current-user :account/name} (get props [:component/id :session])
-        initial? (= :initial current-state)
-        loading? (= :state/checking-session current-state)
-        logged-in? (= :state/logged-in current-state)
+        initial?      (= :initial current-state)
+        loading?      (= :state/checking-session current-state)
+        logged-in?    (= :state/logged-in current-state)
         {:keys [floating-menu]} (css/get-classnames Login)
-        password (or (comp/get-state this :password) "")]   ; c.l. state for security
+        password      (or (comp/get-state this :password) "")] ; c.l. state for security
     (dom/div
-     (when-not initial?
-       (dom/div :.right.menu
-                (if logged-in?
-                  (dom/button :.item
-                              {:onClick #(uism/trigger! this ::session/session :event/logout)}
-                              (dom/span current-user) ent/nbsp "Log out")
-                  (dom/div :.item {:style   {:position "relative"}
-                                   :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
-                           "Login"
-                           (when open?
-                             (dom/div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
-                                                                                     ;; Stop bubbling (would trigger the menu toggle)
-                                                                                     (evt/stop-propagation! e))
-                                                                          :classes [floating-menu]}
-                                      (dom/h3 :.ui.header "Login")
-                                      (div :.ui.form {:classes [(when (seq error) "error")]}
-                                           (field {:label    "Email"
-                                                   :value    email
-                                                   :onChange #(m/set-string! this :account/email :event %)})
-                                           (field {:label    "Password"
-                                                   :type     "password"
-                                                   :value    password
-                                                   :onChange #(comp/set-state! this {:password (evt/target-value %)})})
-                                           (div :.ui.error.message error)
-                                           (div :.ui.field
-                                                (dom/button :.ui.button
-                                                            {:onClick (fn [] (uism/trigger! this ::session/session :event/login {:username email
-                                                                                                                                 :password password}))
-                                                             :classes [(when loading? "loading")]} "Login"))
-                                           (div :.ui.message
-                                                (dom/p "Don't have an account?")
-                                                (dom/a {:onClick (fn []
-                                                                   (uism/trigger! this ::session/session :event/toggle-modal {})
-                                                                   (dr/change-route this ["signup"]))}
-                                                       "Please sign up!"))))))))))))
+      (when-not initial?
+        (dom/div :.right.menu
+          (if logged-in?
+            (dom/button :.item
+              {:onClick #(uism/trigger! this ::session/session :event/logout)}
+              (dom/span current-user) ent/nbsp "Log out")
+            (dom/div :.item {:style   {:position "relative"}
+                             :onClick #(uism/trigger! this ::session/session :event/toggle-modal)}
+              "Login"
+              (when open?
+                (dom/div :.four.wide.ui.raised.teal.segment {:onClick (fn [e]
+                                                                        ;; Stop bubbling (would trigger the menu toggle)
+                                                                        (evt/stop-propagation! e))
+                                                             :classes [floating-menu]}
+                  (dom/h3 :.ui.header "Login")
+                  (div :.ui.form {:classes [(when (seq error) "error")]}
+                    (field {:label    "Email"
+                            :value    email
+                            :onChange #(m/set-string! this :account/email :event %)})
+                    (field {:label    "Password"
+                            :type     "password"
+                            :value    password
+                            :onChange #(comp/set-state! this {:password (evt/target-value %)})})
+                    (div :.ui.error.message error)
+                    (div :.ui.field
+                      (dom/button :.ui.button
+                        {:onClick (fn [] (uism/trigger! this ::session/session :event/login {:username email
+                                                                                             :password password}))
+                         :classes [(when loading? "loading")]} "Login"))
+                    (div :.ui.message
+                      (dom/p "Don't have an account?")
+                      (dom/a {:onClick (fn []
+                                         (uism/trigger! this ::session/session :event/toggle-modal {})
+                                         (dr/change-route this ["signup"]))}
+                        "Please sign up!"))))))))))))
 
 (def ui-login (comp/factory Login))
 
-(defsc Foo [this {:foo/keys [name] :as props}]
-  {:query         [:foo/name]
-   :initial-state (fn [params] {:foo/name "Alex"})
-   :ident         (fn [] [:component/id :foo])}
-  (div
-   (p "Rendered in Foo component: Hi " name)))
-
-(def ui-foo (comp/factory Foo))
-
-(defsc TodoItem [this {:item/keys [id label status] :as props}]
-  {:query         [:item/id :item/label :item/status]
-   :ident         :item/id
-   :initial-state (fn [params]
-                    [{:item/id     1
-                      :item/label  "Buy Milk"
-                      :item/status :not-started}
-                     {:item/id     2
-                      :item/label  "Figure out Fulcro"
-                      :item/status :not-started}
-                     {:item/id 3
-                      :item/label "Something Else"
-                      :item/status :not-started}])}
-  (div :.ui.item
-       (li label)))
-
-(def ui-todoitem (comp/factory TodoItem))
-
-(defsc TodoList [this {:list/keys [id name items] :as props}]
-  {:query         [:list/id :list/name {:list/items (comp/get-query TodoItem)}]
-   :ident         :list/id
-   :initial-state (fn [params]
-                    {:list/id    1
-                     :list/name  "Personal"
-                     :list/items (comp/get-initial-state TodoItem)})}
-  (div :.ui.container.segment
-       (div :.ui.row
-            (h3 "Todo List: " name)
-            (div :.ui.row
-                 (div :.ui.relaxed.divided.list
-                      (map ui-todoitem items))))))
-
-(def ui-todolist (comp/factory TodoList))
-
-(defsc Main [this {:main/keys [lists foo welcome-message] :as props}]
-  {:query         [:main/welcome-message
-                   {:main/foo (comp/get-query Foo)}
-                   {:main/lists (comp/get-query TodoList)}] ;; :main/foo is a reference so it needs a `join` represented by {}
-   :initial-state (fn [params]
-                    {:main/welcome-message "Hi!"
-                     :main/foo             (comp/get-initial-state Foo)
-                     :main/lists           (comp/get-initial-state TodoList)})
+(defsc Main [this props]
+  {:query         [:main/welcome-message]
+   :initial-state {:main/welcome-message "Hi!"}
    :ident         (fn [] [:component/id :main])
    :route-segment ["main"]}
   (div :.ui.container.segment
-       (h3 "Main Component")
-       (p "Welcome Message: " welcome-message)
-       (div :.ui.container
-            (ui-foo foo)
-            (ui-todolist lists))))
+    (h3 "Main")
+    (p (str "Welcome to the Fulcro template. "
+         "The Sign up and login functionalities are partially implemented, "
+         "but mostly this is just a blank slate waiting "
+         "for your project."))))
 
 (defsc Settings [this {:keys [:account/time-zone :account/real-name] :as props}]
-  {:query         [:account/time-zone :account/real-name]
+  {:query         [:account/time-zone :account/real-name :account/crap]
    :ident         (fn [] [:component/id :settings])
    :route-segment ["settings"]
    :initial-state {}}
   (div :.ui.container.segment
-       (h3 "Settings")
-       (div
-        (p (b "Name: ") real-name)
-        (p (b "Time Zone: ") time-zone))))
+    (h3 "Settings")
+    (div "TODO")))
 
 (dr/defrouter TopRouter [this props]
   {:router-targets [Main Signup SignupSuccess Settings]})
@@ -219,7 +168,7 @@
    :ident         (fn [] [:component/id :session])
    :pre-merge     (fn [{:keys [data-tree]}]
                     (merge {:session/valid? false :account/name ""}
-                           data-tree))
+                      data-tree))
    :initial-state {:session/valid? false :account/name ""}})
 
 (def ui-session (comp/factory Session))
@@ -235,16 +184,16 @@
                    :root/current-session {}}}
   (let [current-tab (some-> (dr/current-route this this) first keyword)]
     (div :.ui.container
-         (div :.ui.secondary.pointing.menu
-              (dom/a :.item {:classes [(when (= :main current-tab) "active")]
-                             :onClick (fn [] (dr/change-route this ["main"]))} "Main")
-              (dom/a :.item {:classes [(when (= :settings current-tab) "active")]
-                             :onClick (fn [] (dr/change-route this ["settings"]))} "Settings")
-              (div :.right.menu
-                   (ui-login login)))
-         (div :.ui.grid
-              (div :.ui.row
-                   (ui-top-router router))))))
+      (div :.ui.secondary.pointing.menu
+        (dom/a :.item {:classes [(when (= :main current-tab) "active")]
+                       :onClick (fn [] (dr/change-route this ["main"]))} "Main")
+        (dom/a :.item {:classes [(when (= :settings current-tab) "active")]
+                       :onClick (fn [] (dr/change-route this ["settings"]))} "Settings")
+        (div :.right.menu
+          (ui-login login)))
+      (div :.ui.grid
+        (div :.ui.row
+          (ui-top-router router))))))
 
 (def ui-top-chrome (comp/factory TopChrome))
 
