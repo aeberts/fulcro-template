@@ -1,4 +1,4 @@
-(ns app.ui.root
+(ns app.ui.root-original
   (:require
     [app.model.session :as session]
     [clojure.string :as str]

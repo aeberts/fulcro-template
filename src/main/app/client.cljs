@@ -27,10 +27,10 @@
   ;(inspect/app-started! SPA)
   (app/set-root! SPA root/Root {:initialize-state? true})
   (dr/initialize! SPA)
-  (log/info "Starting session machine.")
-  (uism/begin! SPA session/session-machine ::session/session
-    {:actor/login-form      root/Login
-     :actor/current-session root/Session})
+  ;;(log/info "Starting session machine.")
+  ;;(uism/begin! SPA session/session-machine ::session/session
+  ;;  {:actor/login-form      root/Login
+  ;;   :actor/current-session root/Session})
   (app/mount! SPA root/Root "app" {:initialize-state? false}))
 
 (comment
