@@ -62,3 +62,5 @@ resources/public/workspaces/*
 !resources/public/workspaces/index.html
 /.rebel_readline_history
 /yarn.lock
+/.calva/output-window/output.calva-repl
+/.lsp/sqlite.db
