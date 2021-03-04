@@ -20,6 +20,15 @@
     [com.fulcrologic.semantic-ui.icons :as i]))
 
 (defsc TodoItem [this {:item/keys [id label status]}]
+  {
+   :query         [:item/id :item/label :item/status]
+   :ident         :item/id
+   :initial-state (fn [params]
+                    {1 {:item/id 1 :item/label "Take out the trash" :item/status :not-done}
+                     2 {:item/id 2 :item/label "Paint the deck" :item/status :not-done}
+                     3 {:item/id 3 :item/label "Write TPS report" :item/status :not-done}
+                     4 {:item/id 4 :item/label "Make copies" :item/status :not-done}})
+   }
   (comp/fragment
     (ui-list-item {:className "todo-item"}
       (ui-list-content {:className "todo-content-button" :floated "right" :verticalAlign "middle"}
@@ -31,6 +40,13 @@
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
 (defsc ListItem [this {:list/keys [id label]}]
+  {
+   :query         [:list/id :list/label]
+   :ident         :list/id
+   :initial-state (fn [params]
+                    {1 {:list/id 1 :list/label "Home" :list/items (comp/get-initial-state TodoItem)}
+                     2 {:list/id 2 :list/label "Work" :list/items (comp/get-initial-state TodoItem)}})
+   }
   (comp/fragment
     (ui-menu-item {:name label :active false})))
 
@@ -38,13 +54,14 @@
 
 (defsc Root [this {:root/keys [lists items ui]}]
   {
-   :initial-state {:root/lists [{:list/id 1 :list/label "Home" :list/items [{:item/id 1} {:item/id 2}]}
-                                {:list/id 2 :list/label "Work" :list/items [{:item/id 3} {:item/id 4}]}]
-                   :root/items [{:item/id 1 :item/label "Take out the trash" :item/status :not-done}
-                                {:item/id 2 :item/label "Paint the deck" :item/status :not-done}
-                                {:item/id 3 :item/label "Write TPS report" :item/status :not-done}
-                                {:item/id 4 :item/label "Make copies" :item/status :not-done}]}
-}
+   :query         [{:root/lists (comp/get-query ListItem)}
+                   {:root/items (comp/get-query TodoItem)}
+                   :root/ui {}]
+   :initial-state (fn [params]
+                    {:root/lists (comp/get-initial-state ListItem)
+                     :root/items (comp/get-initial-state TodoItem)
+                     :root/ui    {}})
+   }
   (div :.ui.container.segment
     (div :.ui.grid
       ;; region
@@ -66,3 +83,9 @@
           (div :.row
             (ui-list {:verticalAlign "middle"}
               (map ui-todo-item items))))))))
+
+
+(comment
+  (merge/merge-component! app.application/SPA Root)
+
+  )
