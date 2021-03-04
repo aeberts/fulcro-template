@@ -3,7 +3,6 @@
     [com.fulcrologic.fulcro.networking.http-remote :as net]
     [com.fulcrologic.fulcro.application :as app]
     [com.fulcrologic.fulcro.components :as comp]
-    [holyjak.fulcro-troubleshooting :refer [troubleshooting-render-middleware]]
     ))
 
 (def secured-request-middleware
@@ -18,7 +17,7 @@
                 :remotes {:remote (net/fulcro-http-remote
                                     {:url                "/api"
                                      :request-middleware secured-request-middleware})}
-                :render-middleware troubleshooting-render-middleware
+                :render-middleware (when goog.DEBUG js/holyjak.fulcro_troubleshooting.troubleshooting_render_middleware)
                 }))
 
 (comment

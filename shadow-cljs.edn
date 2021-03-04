@@ -15,6 +15,7 @@
                                                  ;;com.fulcrologic.fulcro.inspect.preload
                                                  com.fulcrologic.fulcro.inspect.websocket-preload
                                                  ;;com.fulcrologic.fulcro.inspect.dom-picker-preload
+                                                 holyjak.fulcro-troubleshooting
                                                  app.development-preload]}}
 
           :test       {:target           :browser-test
