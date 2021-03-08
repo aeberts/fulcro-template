@@ -24,7 +24,7 @@
 (defn ^:export init []
   (log/info "Application starting.")
   (cssi/upsert-css "componentcss" {:component root/Root})
-  ;(inspect/app-started! SPA)
+  (inspect/app-started! SPA)
   (app/set-root! SPA root/Root {:initialize-state? true})
   (dr/initialize! SPA)
   ;;(log/info "Starting session machine.")

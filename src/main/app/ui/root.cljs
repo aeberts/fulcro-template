@@ -23,6 +23,7 @@
 (defsc TodoItem [this {:item/keys [id label status]}]
   {:query         [:item/id :item/label :item/status]
    :ident         [:item/id :item/id]
+   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here:
    :initial-state (fn [{:item/keys [id label status]}]
                     {:item/id id :item/label label :item/status status})}
   (comp/fragment
@@ -38,6 +39,7 @@
 (defsc ListItem [this {:list/keys [id label]}]
   {:query         [:list/id :list/label]
    :ident         [:list/id :list/id]
+   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here:
    :initial-state (fn [{:list/keys [id label]}]
                     {:list/id id :list/label label})}
   (comp/fragment
@@ -48,13 +50,12 @@
 (defsc Root [this {:root/keys [lists items]}]
   {:query         [{:root/lists (comp/get-query ListItem)}
                    {:root/items (comp/get-query TodoItem)}]
-   :initial-state (fn [params]
-                    {:root/lists [(comp/get-initial-state ListItem {:list/id 1 :list/label "Work"})
-                                  (comp/get-initial-state ListItem {:list/id 2 :list/label "Play"})]
-                     :root/items [(comp/get-initial-state TodoItem {:item/id 1 :item/label "Take out the trash" :item/status :not-done})
-                                  (comp/get-initial-state TodoItem {:item/id 2 :item/label "Paint the deck" :item/status :not-done})
-                                  (comp/get-initial-state TodoItem {:item/id 3 :item/label "Write TPS report" :item/status :not-done})
-                                  (comp/get-initial-state TodoItem {:item/id 4 :item/label "Make copies" :item/status :not-done})]})}
+   :initial-state {:root/lists [{:list/id 1 :list/label "Work"}
+                                {:list/id 2 :list/label "Play"}]
+                   :root/items [{:item/id 1 :item/label "Take out the trash" :item/status :not-done}
+                                {:item/id 2 :item/label "Paint the deck" :item/status :not-done}
+                                {:item/id 3 :item/label "Write TPS report" :item/status :not-done}
+                                {:item/id 4 :item/label "Make copies" :item/status :not-done}]}}
   (div :.ui.container.segment
     (div :.ui.grid
       ;; region
@@ -79,10 +80,10 @@
 (comment
 
   ;;Notice a couple of things about this step:
-  ;;- We're using the "lambda form" of :initial-state here. In the next step we'll use the more concise "template form"
+  ;;
+  ;;- We're using the more concise "template form" of :initial-state in the Root component
+  ;;- Since the template form of :initial-state only supports simple keywords (not namespaced keywords) we need to use the lambda form in ListItem and TodoItem to destructure the incoming params
   ;;- In general, you should prefer the "template form" of :initial-state because it will do error checking for you
-  ;;- The components in this example are expecting a map of individual elements so we need to call comp/get-initial-state for each component instance
-  ;;- :initial-state should be a map of the props that your component expects (i.e. the props in the argument list)
-  ;;- For ListItem the props it expects are: :list/id and :list/label because that is what we're destructing in props
+  ;;- The template form of :initial-state auto-derives the joins from the query so we don't need (comp/get-initial-state ListItem) etc. here
 
   )
