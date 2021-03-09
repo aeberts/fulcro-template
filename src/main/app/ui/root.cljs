@@ -36,46 +36,51 @@
 
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
-(defsc ListItem [this {:list/keys [id label]}]
-  {:query         [:list/id :list/label]
+(defsc ListItem [this {:list/keys [id label items]}]
+  {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
    ;; the template form of :initial-state only supports simple keywords so we use the lambda form here:
-   :initial-state (fn [{:list/keys [id label]}]
-                    {:list/id id :list/label label})}
+   :initial-state (fn [{:list/keys [id label items]}]
+                    {:list/id id :list/label label :list/items items})}
   (comp/fragment
     (ui-menu-item {:name label :active false})))
 
 (def ui-listitem (comp/factory ListItem {:keyfn :list/id}))
 
-(defsc Root [this {:root/keys [lists items]}]
+(defsc Root [this {:root/keys [lists ui]}]
   {:query         [{:root/lists (comp/get-query ListItem)}
-                   {:root/items (comp/get-query TodoItem)}]
-   :initial-state {:root/lists [{:list/id 1 :list/label "Work"}
-                                {:list/id 2 :list/label "Play"}]
-                   :root/items [{:item/id 1 :item/label "Take out the trash" :item/status :not-done}
-                                {:item/id 2 :item/label "Paint the deck" :item/status :not-done}
-                                {:item/id 3 :item/label "Write TPS report" :item/status :not-done}
-                                {:item/id 4 :item/label "Make copies" :item/status :not-done}]}}
-  (div :.ui.container.segment
-    (div :.ui.grid
-      ;; region
-      #_(div :.row                                          ; debug info uncomment form see it in the UI
-          (div :.sixteen.wide.mobile.sixteen.wide.computer.column
-            (dom/h3 "Debug info:")
-            (p ":lists data " (str lists))
-            (p ":items data " (str items))))
-      ;; endregion
-      (div :.row
-        (div :.sixteen.wide.mobile.four.wide.computer.column
-          (dom/h2 "Lists ")
-          (div :.row
-            (ui-menu {:pointing true :secondary true :vertical true}
-              (map ui-listitem lists))))
-        (div :.sixteen.wide.mobile.twelve.wide.computer.column
-          (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
-          (div :.row
-            (ui-list {:verticalAlign "middle"}
-              (map ui-todo-item items))))))))
+                   :root/ui]
+   :initial-state {:root/lists [{:list/id    1 :list/label "Work"
+                                 :list/items [{:item/id 1 :item/label "Take out the trash" :item/status :not-done}
+                                              {:item/id 2 :item/label "Paint the deck" :item/status :not-done}]}
+                                {:list/id    2 :list/label "Play"
+                                 :list/items [{:item/id 3 :item/label "Write TPS report" :item/status :not-done}
+                                              {:item/id 4 :item/label "Make copies" :item/status :not-done}]}]
+                   :root/ui    {:selected-list-id 1}}}
+  (let [selected-list (ui :selected-list-id)
+        selected-list-items (-> lists (get (- selected-list 1)) (:list/items))]
+    (div :.ui.container.segment
+      (div :.ui.grid
+        ;; region
+        (div :.row                                        ; debug info uncomment form see it in the UI
+            (div :.sixteen.wide.mobile.sixteen.wide.computer.column
+              (dom/h3 "Debug info:")
+              (p ":lists data " (str lists))
+              (p ":ui data " (str ui))
+              (p "selected-list: " (str selected-list))
+              ))
+        ;; endregion
+        (div :.row
+          (div :.sixteen.wide.mobile.four.wide.computer.column
+            (dom/h2 "Lists ")
+            (div :.row
+              (ui-menu {:pointing true :secondary true :vertical true}
+                (map ui-listitem lists))))
+          (div :.sixteen.wide.mobile.twelve.wide.computer.column
+            (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
+            (div :.row
+              (ui-list {:verticalAlign "middle"}
+                (map ui-todo-item selected-list-items)))))))))
 
 (comment
 
