@@ -20,10 +20,14 @@
     [com.fulcrologic.semantic-ui.elements.image.ui-image :refer [ui-image]]
     [com.fulcrologic.semantic-ui.icons :as i]))
 
+(defmutation update-selected-list [{:list/keys [id] :as params}]
+  (action [{:keys [app state] :as env}]
+    (swap! state assoc-in [:root/ui :selected-list-id] id)))
+
 (defsc TodoItem [this {:item/keys [id label status]}]
   {:query         [:item/id :item/label :item/status]
    :ident         [:item/id :item/id]
-   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here:
+   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here instead:
    :initial-state (fn [{:item/keys [id label status]}]
                     {:item/id id :item/label label :item/status status})}
   (comp/fragment
@@ -39,11 +43,11 @@
 (defsc ListItem [this {:list/keys [id label items]}]
   {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
-   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here:
+   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here instead:
    :initial-state (fn [{:list/keys [id label items]}]
                     {:list/id id :list/label label :list/items items})}
   (comp/fragment
-    (ui-menu-item {:name label :active false})))
+    (ui-menu-item {:name label :active false :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
 
 (def ui-listitem (comp/factory ListItem {:keyfn :list/id}))
 
@@ -62,13 +66,13 @@
     (div :.ui.container.segment
       (div :.ui.grid
         ;; region
-        (div :.row                                        ; debug info uncomment form see it in the UI
-            (div :.sixteen.wide.mobile.sixteen.wide.computer.column
-              (dom/h3 "Debug info:")
-              (p ":lists data " (str lists))
-              (p ":ui data " (str ui))
-              (p "selected-list: " (str selected-list))
-              ))
+        (div :.row                                          ; debug info - uncomment this form see it in the UI
+          (div :.sixteen.wide.mobile.sixteen.wide.computer.column
+            (dom/h3 "Debug info:")
+            #_(p ":lists data " (str lists))
+            #_(p ":ui data " (str ui))
+            (p "selected-list: " (str selected-list))
+            ))
         ;; endregion
         (div :.row
           (div :.sixteen.wide.mobile.four.wide.computer.column
@@ -81,6 +85,8 @@
             (div :.row
               (ui-list {:verticalAlign "middle"}
                 (map ui-todo-item selected-list-items)))))))))
+
+
 
 (comment
 
