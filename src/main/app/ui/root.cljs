@@ -27,9 +27,8 @@
 (defsc TodoItem [this {:item/keys [id label status]}]
   {:query         [:item/id :item/label :item/status]
    :ident         [:item/id :item/id]
-   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here instead:
-   :initial-state (fn [{:item/keys [id label status]}]
-                    {:item/id id :item/label label :item/status status})}
+   ;; if we use simple keywords in :iniital-state of initial state we can destructure with :param/property like so:
+   :initial-state {:item/id :param/id :item/label :param/label :item/status :param/status}}
   (comp/fragment
     (ui-list-item {:className "todo-item"}
       (ui-list-content {:className "todo-content-button" :floated "right" :verticalAlign "middle"}
@@ -43,9 +42,8 @@
 (defsc ListItem [this {:list/keys [id label items]}]
   {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
-   ;; the template form of :initial-state only supports simple keywords so we use the lambda form here instead:
-   :initial-state (fn [{:list/keys [id label items]}]
-                    {:list/id id :list/label label :list/items items})}
+   ;; if we use simple keywords in :iniital-state of initial state we can destructure with :param/property like so:
+   :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
   (comp/fragment
     (ui-menu-item {:name label :active false :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
 
@@ -54,12 +52,12 @@
 (defsc Root [this {:root/keys [lists ui]}]
   {:query         [{:root/lists (comp/get-query ListItem)}
                    :root/ui]
-   :initial-state {:root/lists [{:list/id    1 :list/label "Work"
-                                 :list/items [{:item/id 1 :item/label "Take out the trash" :item/status :not-done}
-                                              {:item/id 2 :item/label "Paint the deck" :item/status :not-done}]}
-                                {:list/id    2 :list/label "Play"
-                                 :list/items [{:item/id 3 :item/label "Write TPS report" :item/status :not-done}
-                                              {:item/id 4 :item/label "Make copies" :item/status :not-done}]}]
+   :initial-state {:root/lists [{:id    1 :label "Work"
+                                 :items [{:id 1 :label "Take out the trash" :status :not-done}
+                                         {:id 2 :label "Paint the deck" :status :not-done}]}
+                                {:id    2 :label "Play"
+                                 :items [{:id 3 :label "Write TPS report" :status :not-done}
+                                         {:id 4 :label "Make copies" :status :not-done}]}]
                    :root/ui    {:selected-list-id 1}}}
   (let [selected-list (ui :selected-list-id)
         selected-list-items (-> lists (get (- selected-list 1)) (:list/items))]
