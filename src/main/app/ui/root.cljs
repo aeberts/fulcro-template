@@ -27,7 +27,7 @@
 (defsc TodoItem [this {:item/keys [id label status]}]
   {:query         [:item/id :item/label :item/status]
    :ident         [:item/id :item/id]
-   ;; if we use simple keywords in :iniital-state of initial state we can destructure with :param/property like so:
+   ;; if we use simple keywords in :initial-state of Root we can destructure with :param/property like so:
    :initial-state {:item/id :param/id :item/label :param/label :item/status :param/status}}
   (comp/fragment
     (ui-list-item {:className "todo-item"}
@@ -42,7 +42,7 @@
 (defsc ListItem [this {:list/keys [id label items]}]
   {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
-   ;; if we use simple keywords in :iniital-state of initial state we can destructure with :param/property like so:
+   ;; if we use simple keywords in :initial-state of Root we can destructure with :param/property like so:
    :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
   (comp/fragment
     (ui-menu-item {:name label :active false :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
