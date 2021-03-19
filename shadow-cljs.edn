@@ -16,7 +16,8 @@
                                                  com.fulcrologic.fulcro.inspect.websocket-preload
                                                  ;;com.fulcrologic.fulcro.inspect.dom-picker-preload
                                                  holyjak.fulcro-troubleshooting
-                                                 app.development-preload]}}
+                                                 app.development-preload]
+                                    :watch-dir "resources/public"}}
 
           :test       {:target           :browser-test
                        :test-dir         "resources/public/js/test"

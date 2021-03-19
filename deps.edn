@@ -5,9 +5,7 @@
          com.fulcrologic/guardrails          {:mvn/version "0.0.12"},
          com.taoensso/tufte                  {:mvn/version "2.1.0"},
          ring/ring-defaults                  {:mvn/version "0.3.2"},
-         ;;com.fulcrologic/fulcro              {:mvn/version "3.4.19-SNAPSHOT"},
-         com.fulcrologic/fulcro              {:git/url "https://github.com/fulcrologic/fulcro",
-                                              :sha "cb160470072a7489719c613994a9aa9f193ad268"},
+         com.fulcrologic/fulcro              {:mvn/version "3.4.20"},
          hiccup/hiccup                       {:mvn/version "1.0.5"},
          com.taoensso/timbre                 {:mvn/version "4.10.0"},
          com.fulcrologic/semantic-ui-wrapper {:mvn/version "1.0.1"},
@@ -39,4 +37,4 @@
                         holyjak/fulcro-troubleshooting
                                                     {:git/url "https://github.com/holyjak/fulcro-troubleshooting",
                                                      :tag     "latest",
-                                                     :sha     "aeb0336fcf266bbfe4f15a6ccf118008de191399"}}}}}
+                                                     :sha     "943e632d076d83d70f828887b079a53ea06bb83d"}}}}}
