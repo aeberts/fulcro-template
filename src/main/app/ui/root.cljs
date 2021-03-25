@@ -11,6 +11,7 @@
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]
+    [com.fulcrologic.fulcro.algorithms.normalized-state :refer [swap!-> integrate-ident]]
     [com.fulcrologic.fulcro-css.css :as css]
     [com.fulcrologic.semantic-ui.collections.menu.ui-menu :refer [ui-menu]]
     [com.fulcrologic.semantic-ui.collections.menu.ui-menu-item :refer [ui-menu-item]]
@@ -22,9 +23,25 @@
     [com.fulcrologic.semantic-ui.elements.image.ui-image :refer [ui-image]]
     [com.fulcrologic.semantic-ui.icons :as i]))
 
-(defmutation update-selected-list [{:list/keys [id] :as params}]
+(defmutation update-selected-list [{:list/keys [id] :as list}]
   (action [{:keys [app state] :as env}]
-    (swap! state assoc-in [:ui/selected-list] {:list/id id})))
+    ;; create collection of non-selected :list/ids  (i.e. get all list ids and remove list with the incoming id)
+    (let [non-selected-list-ids (->> @state
+                                  :list/id
+                                  (filter #(not (= id (key %))))
+                                  (map first)
+                                  vec)
+          _ (log/info "non-selected-list-ids: " non-selected-list-ids)
+          ;;__ (log/info (str ":list/id " id " updated to true"))
+          ;;___ (log/info (str "map over non-selected-lists: " non-selected-list-ids))
+          ]
+      (swap!-> state
+        (assoc-in [:ui/selected-list :list/id] id)
+        ; or alternatively: (update-in [:ui/selected-list] assoc :list/id id)
+        (assoc-in [:list/id id :list/selected?] true))
+      ;; not working - why??
+      (map #(swap! state assoc-in [:list/id % :list/selected?] false) non-selected-list-ids)
+      )))
 
 (defmutation toggle-item-status [{:item/keys [id status] :as params}]
   (action [{:keys [app state] :as env}]
@@ -49,27 +66,30 @@
 
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
-(defsc ListItem [this {:list/keys [id label items]}]
-  {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
+(defsc ListItem [this {:list/keys [id label items selected?]}]
+  {:query         [:list/id :list/label :list/selected? {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
    ;; if we use simple keywords in :initial-state of Root we can destructure with :param/property like so:
-   :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
+   :initial-state {:list/id :param/id :list/label :param/label :list/selected? :param/selected? :list/items :param/items}}
   (comp/fragment
-    (ui-menu-item {:name label :active false :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
+    (ui-menu-item {:name label :active selected? :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
 
 (def ui-listitem (comp/factory ListItem {:keyfn :list/id}))
 
 (defsc Root [this {:root/keys [lists] :ui/keys [selected-list] :as props}]
   {:query         [{:root/lists (comp/get-query ListItem)}
                    :ui/selected-list]
-   :initial-state {:root/lists       [{:id    1 :label "Work"
+   :initial-state {:root/lists       [{:id    1 :label "Play" :selected? false
                                        :items [{:id 1 :label "Take out the trash" :status :not-started}
                                                {:id 2 :label "Paint the deck" :status :done}]}
-                                      {:id    2 :label "Play"
+                                      {:id    2 :label "Work" :selected? true
                                        :items [{:id 3 :label "Write TPS report" :status :done}
-                                               {:id 4 :label "Make copies" :status :not-started}]}]
+                                               {:id 4 :label "Make copies" :status :not-started}]}
+                                      {:id    3 :label "Foo" :selected? false
+                                       :items [{:id 5 :label "Some Foo Stuff" :status :done}
+                                               {:id 6 :label "Not important" :status :not-started}]}
+                                      ]
                    :ui/selected-list {:list/id 1}
-                   ;:ui/selected-todos {}
                    }}
   (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))]
     (div :.ui.container.segment
@@ -100,6 +120,18 @@
 (comment
 
   (def s (app/current-state SPA))
+  (type s)
+
+  (def ls (->> (app/current-state SPA)
+            :list/id))
+
+  ;; create a vector of list ids whose value of :selected? is false
+  (->> s
+    :list/id
+    (filter #(not (= 2 (key %))))
+    (map first))
+
+  (update-in s [:list/id 3] assoc :list/selected? false)
 
   (fdn/db->tree (comp/get-query Root) (comp/get-initial-state Root {}) {})
 
