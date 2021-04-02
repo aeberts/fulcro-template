@@ -39,9 +39,9 @@
         (assoc-in [:ui/selected-list :list/id] id)
         ; or alternatively: (update-in [:ui/selected-list] assoc :list/id id)
         (assoc-in [:list/id id :list/selected?] true))
-      ;; not working - why??
-      (map #(swap! state assoc-in [:list/id % :list/selected?] false) non-selected-list-ids)
-      )))
+      ;; doall is required because map is lazy and swap! won't be called.
+      (doall
+        (map #(swap! state assoc-in [:list/id % :list/selected?] false) non-selected-list-ids)))))
 
 (defmutation toggle-item-status [{:item/keys [id status] :as params}]
   (action [{:keys [app state] :as env}]
@@ -140,10 +140,8 @@
   (fdn/db->tree [{:root/lists [:list/label]}] (comp/get-initial-state Root {}) {})
 
   ;; What we did in this step:
-  ;; Added a mutation to update the item status when the checkbox is clicked
-  ;; Added a custom-site.css file and updated shadow-cljs.edn to watch "resources/public" directory
-  ;; Updated to the latest version of Fulcro
   ;;
-  ;; Next: Make the Lists component show which list is selected based on :ui/selected-list
+  ;; Updated the lists to show the selected list. However the solution is not optimal
+  ;; In the next step we'll improve it.
 
   )
