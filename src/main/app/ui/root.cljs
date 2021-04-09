@@ -25,23 +25,16 @@
 
 (defmutation update-selected-list [{:list/keys [id] :as list}]
   (action [{:keys [app state] :as env}]
-    ;; create collection of non-selected :list/ids  (i.e. get all list ids and remove list with the incoming id)
-    (let [non-selected-list-ids (->> @state
-                                  :list/id
-                                  (filter #(not (= id (key %))))
-                                  (map first)
-                                  vec)
-          _ (log/info "non-selected-list-ids: " non-selected-list-ids)
-          ;;__ (log/info (str ":list/id " id " updated to true"))
-          ;;___ (log/info (str "map over non-selected-lists: " non-selected-list-ids))
+    (let [prev-selected-list (->> @state
+                                  :ui/selected-list
+                               :list/id)
+          _ (log/info "prev-selected-list-id: " prev-selected-list)
+          __ (log/info "current-selected-list-id: " id)
           ]
       (swap!-> state
-        (assoc-in [:ui/selected-list :list/id] id)
-        ; or alternatively: (update-in [:ui/selected-list] assoc :list/id id)
-        (assoc-in [:list/id id :list/selected?] true))
-      ;; doall is required because map is lazy and swap! won't be called.
-      (doall
-        (map #(swap! state assoc-in [:list/id % :list/selected?] false) non-selected-list-ids)))))
+        (assoc-in [:list/id prev-selected-list :list/selected?] false)
+        (assoc-in [:list/id id :list/selected?] true)
+        (assoc-in [:ui/selected-list :list/id] id)))))
 
 (defmutation toggle-item-status [{:item/keys [id status] :as params}]
   (action [{:keys [app state] :as env}]
@@ -79,10 +72,10 @@
 (defsc Root [this {:root/keys [lists] :ui/keys [selected-list] :as props}]
   {:query         [{:root/lists (comp/get-query ListItem)}
                    :ui/selected-list]
-   :initial-state {:root/lists       [{:id    1 :label "Play" :selected? false
+   :initial-state {:root/lists       [{:id    1 :label "Play" :selected? true
                                        :items [{:id 1 :label "Take out the trash" :status :not-started}
                                                {:id 2 :label "Paint the deck" :status :done}]}
-                                      {:id    2 :label "Work" :selected? true
+                                      {:id    2 :label "Work" :selected? false
                                        :items [{:id 3 :label "Write TPS report" :status :done}
                                                {:id 4 :label "Make copies" :status :not-started}]}
                                       {:id    3 :label "Foo" :selected? false
