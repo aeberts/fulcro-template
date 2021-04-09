@@ -50,16 +50,15 @@
 
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
-(defsc ListItem [this {:list/keys [id label items] :ui/keys [selected-list]}]
+(defsc ListItem [this {:list/keys [id label items] :ui/keys [selected-list]} {:keys [onSelected]}]
   {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}
                    [:ui/selected-list '_]]
    :ident         [:list/id :list/id]
    :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
-  #_(log/info ":ui/selected-list: " selected-list)
   (comp/fragment
     (ui-menu-item {:name label
                    :active (if (= id (:list/id selected-list)) true false) ;; is there a more concise expression?
-                   :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
+                   :onClick #(onSelected id)})))
 
 (def ui-listitem (comp/factory ListItem {:keyfn :list/id}))
 
@@ -77,7 +76,8 @@
                                                {:id 6 :label "Not important" :status :not-started}]}]
                    :ui/selected-list {:list/id 1}
                    }}
-  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))]
+  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))
+        update-selected #(comp/transact! this [(update-selected-list {:list/id %})])]
     (div :.ui.container.segment
       (div :.ui.grid
         ;; region
@@ -96,7 +96,7 @@
             (dom/h2 "Lists ")
             (div :.row
               (ui-menu {:pointing true :secondary true :vertical true}
-                (map ui-listitem lists))))
+                (map (fn [l] (ui-listitem (comp/computed l {:onSelected update-selected}))) lists))))
           (div :.sixteen.wide.mobile.twelve.wide.computer.column
             (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
             (div :.row
