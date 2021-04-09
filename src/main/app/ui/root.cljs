@@ -42,25 +42,25 @@
       (ui-list-content {:className "todo-content-button" :floated "right" :verticalAlign "middle"}
         (ui-button {:className "todo-button" :compact true} "Delete"))
       (ui-list-content {:floated "left"}
-        (ui-checkbox {:className "todo-checkbox" :checked (if (= status :done) true false)
+        (ui-checkbox {:className "todo-checkbox" :checked (= status :done)
                       :onClick   #(comp/transact! this [(toggle-item-status {:item/id id :item/status status})])}))
-      (ui-list-content {:className     (str "todo-label " (if (= status :done) "done"))
+      (ui-list-content {:className     (str "todo-label " (when (= status :done) "done"))
                         :verticalAlign "middle"}
         label))))
 
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
-(defsc ListItem [this {:list/keys [id label items] :ui/keys [selected-list]} {:keys [onSelected]}]
-  {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}
-                   [:ui/selected-list '_]]
+(defsc ListItem [this {:list/keys [id label items]} {:keys [active?]}]
+  {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
    :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
   (comp/fragment
     (ui-menu-item {:name label
-                   :active (if (= id (:list/id selected-list)) true false) ;; is there a more concise expression?
-                   :onClick #(onSelected id)})))
+                   :active active?
+                   :onClick #(comp/transact! this [(update-selected-list {:list/id id})])
+                   })))
 
-(def ui-listitem (comp/factory ListItem {:keyfn :list/id}))
+(def ui-listitem (comp/computed-factory ListItem {:keyfn :list/id}))
 
 (defsc Root [this {:root/keys [lists] :ui/keys [selected-list] :as props}]
   {:query         [{:root/lists (comp/get-query ListItem)}
@@ -74,8 +74,7 @@
                                       {:id    3 :label "Foo"
                                        :items [{:id 5 :label "Some Foo Stuff" :status :done}
                                                {:id 6 :label "Not important" :status :not-started}]}]
-                   :ui/selected-list {:list/id 1}
-                   }}
+                   :ui/selected-list {:list/id 1}}}
   (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))
         update-selected #(comp/transact! this [(update-selected-list {:list/id %})])]
     (div :.ui.container.segment
@@ -96,7 +95,7 @@
             (dom/h2 "Lists ")
             (div :.row
               (ui-menu {:pointing true :secondary true :vertical true}
-                (map (fn [l] (ui-listitem (comp/computed l {:onSelected update-selected}))) lists))))
+                (map #(ui-listitem % {:active? (= (:list/id %) (:list/id selected-list))}) lists))))
           (div :.sixteen.wide.mobile.twelve.wide.computer.column
             (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
             (div :.row
