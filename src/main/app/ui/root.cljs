@@ -25,16 +25,8 @@
 
 (defmutation update-selected-list [{:list/keys [id] :as list}]
   (action [{:keys [app state] :as env}]
-    (let [prev-selected-list (->> @state
-                                  :ui/selected-list
-                               :list/id)
-          _ (log/info "prev-selected-list-id: " prev-selected-list)
-          __ (log/info "current-selected-list-id: " id)
-          ]
-      (swap!-> state
-        (assoc-in [:list/id prev-selected-list :list/selected?] false)
-        (assoc-in [:list/id id :list/selected?] true)
-        (assoc-in [:ui/selected-list :list/id] id)))))
+    (swap!-> state
+      (assoc-in [:ui/selected-list :list/id] id))))
 
 (defmutation toggle-item-status [{:item/keys [id status] :as params}]
   (action [{:keys [app state] :as env}]
@@ -44,7 +36,6 @@
 (defsc TodoItem [this {:item/keys [id label status]}]
   {:query         [:item/id :item/label :item/status]
    :ident         [:item/id :item/id]
-   ;; if we use simple keywords in :initial-state of Root we can destructure with :param/property like so:
    :initial-state {:item/id :param/id :item/label :param/label :item/status :param/status}}
   (comp/fragment
     (ui-list-item {:className "todo-item"}
@@ -59,29 +50,31 @@
 
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
-(defsc ListItem [this {:list/keys [id label items selected?]}]
-  {:query         [:list/id :list/label :list/selected? {:list/items (comp/get-query TodoItem)}]
+(defsc ListItem [this {:list/keys [id label items] :ui/keys [selected-list]}]
+  {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}
+                   [:ui/selected-list '_]]
    :ident         [:list/id :list/id]
-   ;; if we use simple keywords in :initial-state of Root we can destructure with :param/property like so:
-   :initial-state {:list/id :param/id :list/label :param/label :list/selected? :param/selected? :list/items :param/items}}
+   :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
+  #_(log/info ":ui/selected-list: " selected-list)
   (comp/fragment
-    (ui-menu-item {:name label :active selected? :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
+    (ui-menu-item {:name label
+                   :active (if (= id (:list/id selected-list)) true false) ;; is there a more concise expression?
+                   :onClick #(comp/transact! this [(update-selected-list {:list/id id})])})))
 
 (def ui-listitem (comp/factory ListItem {:keyfn :list/id}))
 
 (defsc Root [this {:root/keys [lists] :ui/keys [selected-list] :as props}]
   {:query         [{:root/lists (comp/get-query ListItem)}
                    :ui/selected-list]
-   :initial-state {:root/lists       [{:id    1 :label "Play" :selected? true
+   :initial-state {:root/lists       [{:id    1 :label "Play"
                                        :items [{:id 1 :label "Take out the trash" :status :not-started}
                                                {:id 2 :label "Paint the deck" :status :done}]}
-                                      {:id    2 :label "Work" :selected? false
+                                      {:id    2 :label "Work"
                                        :items [{:id 3 :label "Write TPS report" :status :done}
                                                {:id 4 :label "Make copies" :status :not-started}]}
-                                      {:id    3 :label "Foo" :selected? false
+                                      {:id    3 :label "Foo"
                                        :items [{:id 5 :label "Some Foo Stuff" :status :done}
-                                               {:id 6 :label "Not important" :status :not-started}]}
-                                      ]
+                                               {:id 6 :label "Not important" :status :not-started}]}]
                    :ui/selected-list {:list/id 1}
                    }}
   (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))]
