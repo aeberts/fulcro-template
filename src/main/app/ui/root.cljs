@@ -7,7 +7,7 @@
     [com.fulcrologic.fulcro.application :as app]
     [com.fulcrologic.fulcro.dom.events :as evt]
     [com.fulcrologic.fulcro.dom :as dom :refer [div p a]]
-    [com.fulcrologic.fulcro.components :as comp :refer [defsc]]
+    [com.fulcrologic.fulcro.components :as comp :refer [defsc get-initial-state get-query]]
     [com.fulcrologic.fulcro.mutations :as m :refer [defmutation]]
     [com.fulcrologic.fulcro.algorithms.merge :as merge]
     [com.fulcrologic.fulcro.algorithms.denormalize :as fdn]
@@ -55,47 +55,62 @@
    :ident         [:list/id :list/id]
    :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
   (comp/fragment
-    (ui-menu-item {:name label
-                   :active active?
+    (ui-menu-item {:name    label
+                   :active  active?
                    :onClick #(comp/transact! this [(update-selected-list {:list/id id})])
                    })))
-
 (def ui-listitem (comp/computed-factory ListItem {:keyfn :list/id}))
 
-(defsc Root [this {:root/keys [lists] :ui/keys [selected-list] :as props}]
-  {:query         [{:root/lists (comp/get-query ListItem)}
+;; Listpane is a singleton so we'll store it at [:component :listpane] in the app-cache
+(defsc ListPane [this {:listpane/keys [lists]} {:ui/keys [selected-list]}]
+  {:query         [{:listpane/lists (comp/get-query ListItem)}
+                   [:ui/selected-list '_]]
+   :ident         (fn [] [:component/id :listpane])
+   :initial-state (fn [{:listpane/keys [lists]}]
+                    {:listpane/lists lists})
+   }
+  (let [update-selected #(comp/transact! this [(update-selected-list {:list/id %})])
+        ;;_ (log/info "listpane props: " (str lists))
+        ]
+    (dom/h2 "Lists"
+      (div :.row
+        (ui-menu {:pointing true :secondary true :vertical true}
+          (map #(ui-listitem % {:active? (= (:list/id %) (:list/id selected-list))}) lists))))))
+
+(def ui-listpane (comp/factory ListPane))
+
+(defsc Root [this {:root/keys [all-data] :ui/keys [selected-list]}]
+  {:query         [{:root/all-data (comp/get-query ListPane)}
                    :ui/selected-list]
-   :initial-state {:root/lists       [{:id    1 :label "Play"
-                                       :items [{:id 1 :label "Take out the trash" :status :not-started}
-                                               {:id 2 :label "Paint the deck" :status :done}]}
-                                      {:id    2 :label "Work"
-                                       :items [{:id 3 :label "Write TPS report" :status :done}
-                                               {:id 4 :label "Make copies" :status :not-started}]}
-                                      {:id    3 :label "Foo"
-                                       :items [{:id 5 :label "Some Foo Stuff" :status :done}
-                                               {:id 6 :label "Not important" :status :not-started}]}]
+   :initial-state {:root/all-data    {:listpane/lists
+                                      [{:id    1 :label "Home"
+                                        :items [{:id 1 :label "Take out the trash" :status :not-started}
+                                                {:id 2 :label "Paint the deck" :status :done}]}
+                                       {:id    2 :label "Work"
+                                        :items [{:id 3 :label "Write TPS report" :status :done}
+                                                {:id 4 :label "Make copies" :status :not-started}]}
+                                       {:id    3 :label "Foo"
+                                        :items [{:id 5 :label "Some Foo Todo 1" :status :done}
+                                                {:id 6 :label "Foo Todo 1" :status :not-started}]}]}
                    :ui/selected-list {:list/id 1}}}
-  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))
+  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) all-data))
         update-selected #(comp/transact! this [(update-selected-list {:list/id %})])]
     (div :.ui.container.segment
       (div :.ui.grid
         ;; region
-        #_(div :.row                                        ; debug info - uncomment this form see it in the UI
-            (div :.sixteen.wide.mobile.sixteen.wide.computer.column
-              (dom/h3 "Debug info:")
-              #_(p ":lists data " (str lists))
-              #_(p ":ui data " (str ui))
-              (p "lists: " (str lists))
-              (p "selected-list: " (str selected-list))
-              (p "selected-todos: " (str selected-todos))
-              ))
+        (div :.row                                          ; debug info - uncomment this form see it in the UI
+          (div :.sixteen.wide.mobile.sixteen.wide.computer.column
+            (dom/h3 "Debug info:")
+            (p ":lists all-data " (str all-data))
+            #_(p ":ui data " (str ui))
+            #_(p "lists: " (str lists))
+            (p "selected-list: " (str selected-list))
+            (p "selected-todos: " (str selected-todos))
+            ))
         ;; endregion
         (div :.row
           (div :.sixteen.wide.mobile.four.wide.computer.column
-            (dom/h2 "Lists ")
-            (div :.row
-              (ui-menu {:pointing true :secondary true :vertical true}
-                (map #(ui-listitem % {:active? (= (:list/id %) (:list/id selected-list))}) lists))))
+            (ui-listpane all-data))
           (div :.sixteen.wide.mobile.twelve.wide.computer.column
             (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
             (div :.row
