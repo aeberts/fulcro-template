@@ -62,38 +62,37 @@
 (def ui-listitem (comp/computed-factory ListItem {:keyfn :list/id}))
 
 ;; Listpane is a singleton so we'll store it at [:component :listpane] in the app-cache
-(defsc ListPane [this {:listpane/keys [lists]} {:ui/keys [selected-list]}]
-  {:query         [{:listpane/lists (comp/get-query ListItem)}
+(defsc ListPanel [this {:keys [list-item] :as props} {:ui/keys [selected-list]}]
+  {:query         [{:list-item (comp/get-query ListItem)}
                    [:ui/selected-list '_]]
-   :ident         (fn [] [:component/id :listpane])
-   :initial-state (fn [{:listpane/keys [lists]}]
-                    {:listpane/lists lists})
+   :ident         (fn [] [:component/id :listpanel])
+   :initial-state (fn [params]
+                    (identity params))
    }
   (let [update-selected #(comp/transact! this [(update-selected-list {:list/id %})])
-        ;;_ (log/info "listpane props: " (str lists))
+        _ (log/info "listpane props: " (str lists))
         ]
     (dom/h2 "Lists"
       (div :.row
         (ui-menu {:pointing true :secondary true :vertical true}
           (map #(ui-listitem % {:active? (= (:list/id %) (:list/id selected-list))}) lists))))))
 
-(def ui-listpane (comp/factory ListPane))
+(def ui-listpanel (comp/factory ListPanel))
 
-(defsc Root [this {:root/keys [all-data] :ui/keys [selected-list]}]
-  {:query         [{:root/all-data (comp/get-query ListPane)}
+(defsc Root [this {:root/keys [listpanel]} {:ui/keys [selected-list]}]
+  {:query         [{:root/listpanel (comp/get-query ListPanel)}
                    :ui/selected-list]
-   :initial-state {:root/all-data    {:listpane/lists
-                                      [{:id    1 :label "Home"
-                                        :items [{:id 1 :label "Take out the trash" :status :not-started}
-                                                {:id 2 :label "Paint the deck" :status :done}]}
-                                       {:id    2 :label "Work"
-                                        :items [{:id 3 :label "Write TPS report" :status :done}
-                                                {:id 4 :label "Make copies" :status :not-started}]}
-                                       {:id    3 :label "Foo"
-                                        :items [{:id 5 :label "Some Foo Todo 1" :status :done}
-                                                {:id 6 :label "Foo Todo 1" :status :not-started}]}]}
-                   :ui/selected-list {:list/id 1}}}
-  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) all-data))
+   :initial-state [{:root/listpanel
+                    [{:id    1 :label "Home"
+                      :items [{:id 1 :label "Take out the trash" :status :not-started}
+                              {:id 2 :label "Paint the deck" :status :done}]}
+                     {:id    2 :label "Work"
+                      :items [{:id 3 :label "Write TPS report" :status :done}
+                              {:id 4 :label "Make copies" :status :not-started}]}
+                     {:id    3 :label "Foo"
+                      :items [{:id 5 :label "Some Foo Todo 1" :status :done}
+                              {:id 6 :label "Foo Todo 1" :status :not-started}]}]}]}
+  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) listpanel))
         update-selected #(comp/transact! this [(update-selected-list {:list/id %})])]
     (div :.ui.container.segment
       (div :.ui.grid
@@ -101,7 +100,7 @@
         (div :.row                                          ; debug info - uncomment this form see it in the UI
           (div :.sixteen.wide.mobile.sixteen.wide.computer.column
             (dom/h3 "Debug info:")
-            (p ":lists all-data " (str all-data))
+            (p ":root/listpanel " (str listpanel))
             #_(p ":ui data " (str ui))
             #_(p "lists: " (str lists))
             (p "selected-list: " (str selected-list))
@@ -110,7 +109,7 @@
         ;; endregion
         (div :.row
           (div :.sixteen.wide.mobile.four.wide.computer.column
-            (ui-listpane all-data))
+            (ui-listpanel listpanel))
           (div :.sixteen.wide.mobile.twelve.wide.computer.column
             (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
             (div :.row
