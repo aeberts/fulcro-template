@@ -50,63 +50,67 @@
 
 (def ui-todo-item (comp/factory TodoItem {:keyfn :item/id}))
 
-(defsc ListItem [this {:list/keys [id label items]} {:keys [active?]}]
+(defsc ListItem [this {:list/keys [id label items] :as props} {:keys [active?]} ]
   {:query         [:list/id :list/label {:list/items (comp/get-query TodoItem)}]
    :ident         [:list/id :list/id]
    :initial-state {:list/id :param/id :list/label :param/label :list/items :param/items}}
-  (comp/fragment
-    (ui-menu-item {:name    label
-                   :active  active?
-                   :onClick #(comp/transact! this [(update-selected-list {:list/id id})])
-                   })))
+  (let [_ (log/info "ListItem props: " (str props))]
+    (comp/fragment
+      (ui-menu-item {:name    label
+                     :active active?
+                     :onClick #(comp/transact! this [(update-selected-list {:list/id id})])}))))
 (def ui-listitem (comp/computed-factory ListItem {:keyfn :list/id}))
 
 ;; Listpane is a singleton so we'll store it at [:component :listpane] in the app-cache
-(defsc ListPanel [this {:keys [list-item] :as props} {:ui/keys [selected-list]}]
-  {:query         [{:list-item (comp/get-query ListItem)}
+(defsc ListPanel [this {:listpanel/keys [lists] :ui/keys [selected-list] :as props}]
+  {:query         [{:listpanel/lists (comp/get-query ListItem)}
                    [:ui/selected-list '_]]
    :ident         (fn [] [:component/id :listpanel])
-   :initial-state (fn [params]
-                    (identity params))
-   }
+   :initial-state (fn [{:listpanel/keys [lists]}]
+                    {:listpanel/lists lists})}
   (let [update-selected #(comp/transact! this [(update-selected-list {:list/id %})])
-        _ (log/info "listpane props: " (str lists))
+        ;;_ (log/info "listpane props: " (str props))
         ]
     (dom/h2 "Lists"
       (div :.row
         (ui-menu {:pointing true :secondary true :vertical true}
-          (map #(ui-listitem % {:active? (= (:list/id %) (:list/id selected-list))}) lists))))))
+          (map #(ui-listitem % {:active? (= (:list/id %) (:list/id selected-list))}) lists)
+          )))))
 
 (def ui-listpanel (comp/factory ListPanel))
 
-(defsc Root [this {:root/keys [listpanel]} {:ui/keys [selected-list]}]
+(defsc Root [this {:root/keys [listpanel] :ui/keys [selected-list]}]
   {:query         [{:root/listpanel (comp/get-query ListPanel)}
                    :ui/selected-list]
-   :initial-state [{:root/listpanel
-                    [{:id    1 :label "Home"
-                      :items [{:id 1 :label "Take out the trash" :status :not-started}
-                              {:id 2 :label "Paint the deck" :status :done}]}
-                     {:id    2 :label "Work"
-                      :items [{:id 3 :label "Write TPS report" :status :done}
-                              {:id 4 :label "Make copies" :status :not-started}]}
-                     {:id    3 :label "Foo"
-                      :items [{:id 5 :label "Some Foo Todo 1" :status :done}
-                              {:id 6 :label "Foo Todo 1" :status :not-started}]}]}]}
-  (let [selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) listpanel))
-        update-selected #(comp/transact! this [(update-selected-list {:list/id %})])]
+   :initial-state {:root/listpanel
+                   {:listpanel/lists [{:list/id    1 :list/label "Home"
+                                       :list/items [{:item/id 1 :item/label "Take out the trash" :item/status :not-started}
+                                                    {:item/id 2 :item/label "Paint the deck" :item/status :done}]}
+                                      {:list/id    2 :list/label "Work"
+                                       :list/items [{:item/id 3 :item/label "Write TPS report" :item/status :done}
+                                                    {:item/id 4 :item/label "Make copies" :item/status :not-started}]}
+                                      {:list/id    3 :list/label "Foo"
+                                       :list/items [{:item/id 5 :item/label "Some Foo Todo 1" :item/status :done}
+                                                    {:item/id 6 :item/label "Foo Todo 1" :item/status :not-started}]}]}
+                   :ui/selected-list {:list/id 1}}}
+  (let [lists (:listpanel/lists listpanel)
+        selected-todos (some :list/items (map #(if (= (:list/id selected-list) (:list/id %)) %) lists))
+        update-selected #(comp/transact! this [(update-selected-list {:list/id %})])
+        ;; _ (log/info (str "selected-list: " selected-list))
+        ]
     (div :.ui.container.segment
       (div :.ui.grid
-        ;; region
-        (div :.row                                          ; debug info - uncomment this form see it in the UI
+        ;; region debug info
+        #_(div :.row                                          ; debug info - uncomment this form see it in the UI
           (div :.sixteen.wide.mobile.sixteen.wide.computer.column
-            (dom/h3 "Debug info:")
+            (dom/h3 "Root component debug info:")
             (p ":root/listpanel " (str listpanel))
             #_(p ":ui data " (str ui))
             #_(p "lists: " (str lists))
             (p "selected-list: " (str selected-list))
             (p "selected-todos: " (str selected-todos))
             ))
-        ;; endregion
+        ;; endregion debug info
         (div :.row
           (div :.sixteen.wide.mobile.four.wide.computer.column
             (ui-listpanel listpanel))
@@ -114,7 +118,8 @@
             (dom/h2 #js {:style #js {:marginBottom "25px"}} "Tasks")
             (div :.row
               (ui-list {:verticalAlign "middle"}
-                (map ui-todo-item selected-todos)))))))))
+                (map ui-todo-item selected-todos)
+                ))))))))
 
 (comment
 
@@ -123,6 +128,8 @@
 
   (def ls (->> (app/current-state SPA)
             :list/id))
+
+  (comp/transact! SPA [(update-selected-list {:list/id 3})])
 
   ;; create a vector of list ids whose value of :selected? is false
   (->> s
@@ -137,10 +144,5 @@
   (def root-state (comp/get-initial-state Root {}))
 
   (fdn/db->tree [{:root/lists [:list/label]}] (comp/get-initial-state Root {}) {})
-
-  ;; What we did in this step:
-  ;;
-  ;; Updated the lists to show the selected list. However the solution is not optimal
-  ;; In the next step we'll improve it.
 
   )
